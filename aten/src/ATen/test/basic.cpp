@@ -2,7 +2,7 @@
 
 #include <ATen/ATen.h>
 #include <ATen/core/Reduction.h>
-#include <ATen/cuda/CUDAContext.h>
+#include <torch/cuda.h>
 
 // for TH compat test only...
 struct THFloatTensor;
@@ -380,16 +380,16 @@ TEST(BasicTest, FactoryMethodsTest) {
   ASSERT_FALSE(tensor1.requires_grad());
   ASSERT_FALSE(tensor1.is_pinned());
 
-  // Test setting pin memory
-  tensor1 = at::empty({4}, at::TensorOptions().pinned_memory(true));
-  ASSERT_EQ(tensor1.dtype(), at::kFloat);
-  ASSERT_EQ(tensor1.layout(), at::kStrided);
-  ASSERT_EQ(tensor1.device(), at::kCPU);
-  ASSERT_EQ(tensor1.requires_grad(), false);
-  ASSERT_FALSE(tensor1.device().is_cuda());
-  ASSERT_TRUE(tensor1.is_pinned());
+  if (torch::cuda::is_available()) {
+    // Test setting pin memory
+    tensor1 = at::empty({4}, at::TensorOptions().pinned_memory(true));
+    ASSERT_EQ(tensor1.dtype(), at::kFloat);
+    ASSERT_EQ(tensor1.layout(), at::kStrided);
+    ASSERT_EQ(tensor1.device(), at::kCPU);
+    ASSERT_EQ(tensor1.requires_grad(), false);
+    ASSERT_FALSE(tensor1.device().is_cuda());
+    ASSERT_TRUE(tensor1.is_pinned());
 
-  if (at::cuda::is_available()) {
     // Test setting device
     tensor1 = at::empty({4}, at::TensorOptions().device(at::kCUDA));
     ASSERT_EQ(tensor1.dtype(), at::kFloat);
