@@ -2,6 +2,7 @@
 
 #include <ATen/ATen.h>
 #include <ATen/core/Reduction.h>
+#include <ATen/cuda/CUDAContext.h>
 
 // for TH compat test only...
 struct THFloatTensor;
@@ -347,33 +348,62 @@ TEST(BasicTest, BasicTestCUDA) {
 }
 
 TEST(BasicTest, FactoryMethodsTest) {
-  at::Tensor tensor0 = at::bartlett_window(0);
-  ASSERT_EQ(tensor0.dtype(), kFloat);
-  ASSERT_EQ(tensor0.layout(), at::kStrided);
-
-  tensor0 = at::bartlett_window(0, at::TensorOptions().requires_grad(false));
-  ASSERT_EQ(tensor0.dtype(), kFloat);
+  // Test default values
+  at::Tensor tensor0 = at::empty({4});
+  ASSERT_EQ(tensor0.dtype(), at::kFloat);
   ASSERT_EQ(tensor0.layout(), at::kStrided);
   ASSERT_EQ(tensor0.device(), at::kCPU);
+  ASSERT_FALSE(tensor0.requires_grad());
+  ASSERT_FALSE(tensor0.is_pinned());
 
-  at::Tensor tensor1 = at::bartlett_window(0, at::TensorOptions().dtype(kHalf));
-  ASSERT_EQ(tensor1.dtype(), kHalf);
+  // Test setting grad to FALSE
+  tensor0 = at::empty({4}, at::TensorOptions().requires_grad(false));
+  ASSERT_EQ(tensor0.dtype(), at::kFloat);
+  ASSERT_EQ(tensor0.layout(), at::kStrided);
+  ASSERT_EQ(tensor0.device(), at::kCPU);
+  ASSERT_FALSE(tensor0.requires_grad());
+  ASSERT_FALSE(tensor0.is_pinned());
+
+  // Test setting grad to TRUE. LOGISSUE
+  tensor0 = at::empty({4}, at::TensorOptions().requires_grad(true));
+  ASSERT_EQ(tensor0.dtype(), at::kFloat);
+  ASSERT_EQ(tensor0.layout(), at::kStrided);
+  ASSERT_EQ(tensor0.device(), at::kCPU);
+  ASSERT_FALSE(tensor0.requires_grad());
+  ASSERT_FALSE(tensor0.is_pinned());
+
+  // Test setting dtype
+  at::Tensor tensor1 = at::empty({4}, at::TensorOptions().dtype(at::kHalf));
+  ASSERT_EQ(tensor1.dtype(), at::kHalf);
   ASSERT_EQ(tensor1.layout(), at::kStrided);
+  ASSERT_EQ(tensor1.device(), at::kCPU);
+  ASSERT_FALSE(tensor1.requires_grad());
+  ASSERT_FALSE(tensor1.is_pinned());
+
+  // Test setting pin memory
+  tensor1 = at::empty({4}, at::TensorOptions().pinned_memory(true));
+  ASSERT_EQ(tensor1.dtype(), at::kFloat);
+  ASSERT_EQ(tensor1.layout(), at::kStrided);
+  ASSERT_EQ(tensor1.device(), at::kCPU);
+  ASSERT_EQ(tensor1.requires_grad(), false);
   ASSERT_FALSE(tensor1.device().is_cuda());
+  ASSERT_TRUE(tensor1.is_pinned());
 
-  tensor1 = at::bartlett_window(0, at::TensorOptions().dtype(kFloat).device(at::kCPU).layout(at::kStrided));
-  ASSERT_EQ(tensor1.dtype(), kFloat);
-  ASSERT_EQ(tensor1.layout(), at::kStrided);
-  ASSERT_FALSE(tensor1.device().is_cuda()); // <----- check cuda case
+  if (at::cuda::is_available()) {
+    // Test setting device
+    tensor1 = at::empty({4}, at::TensorOptions().device(at::kCUDA));
+    ASSERT_EQ(tensor1.dtype(), at::kFloat);
+    ASSERT_EQ(tensor1.layout(), at::kStrided);
+    ASSERT_TRUE(tensor1.device().is_cuda());
+    ASSERT_FALSE(tensor1.requires_grad());
+    ASSERT_FALSE(tensor1.is_pinned());
 
-  at::Tensor tensor2 = at::bartlett_window({5}, at::TensorOptions().requires_grad(true));
-  ASSERT_EQ(tensor2.dtype(), kFloat);
-  ASSERT_EQ(tensor2.layout(), at::kStrided);
-  ASSERT_EQ(tensor2.requires_grad(), true);
-
-  tensor2 = at::bartlett_window({5}, at::TensorOptions().dtype(kLong).device(at::kCPU).requires_grad(false));
-  ASSERT_EQ(tensor2.dtype(), kLong);
-  ASSERT_EQ(tensor2.layout(), at::kStrided);
-  ASSERT_EQ(tensor2.requires_grad(), false);
-  ASSERT_FALSE(tensor2.device().is_cuda());
+    // Test set everything
+    tensor1 = at::empty({4}, at::TensorOptions().dtype(at::kHalf).device(at::kCUDA).layout(at::kSparse).requires_grad(true));
+    ASSERT_EQ(tensor1.dtype(), at::kHalf);
+    ASSERT_EQ(tensor1.layout(), at::kSparse);
+    ASSERT_TRUE(tensor1.device().is_cuda());
+    ASSERT_FALSE(tensor1.requires_grad());
+    // ASSERT_FALSE(tensor1.is_pinned()); LOGISSUE
+  }
 }
