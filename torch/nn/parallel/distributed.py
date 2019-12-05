@@ -303,6 +303,9 @@ class DistributedDataParallel(Module):
                 self.broadcast_bucket_size)
 
         self._ddp_init_helper()
+        # TODO: figure out the exact deadlock between dist and pinned memory
+        # allocator.
+        import time; time.sleep(3)
 
     def _ddp_init_helper(self):
         """
