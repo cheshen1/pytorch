@@ -246,6 +246,7 @@ def is_view(decl):
 def is_out_variant(decl):
     return decl['name'].endswith('_out')
 
+
 # Copied from ..autograd.gen_python_functions.SKIP_PYTHON_BINDINGS
 BACKWARD_OP_PATTERNS = [
     '.*_backward',

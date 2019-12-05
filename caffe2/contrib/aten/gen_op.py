@@ -52,6 +52,7 @@ try:
 except ImportError:
     from yaml import Loader
 
+
 def write(filename, s):
     with open(filename, "w") as f:
         f.write(s)

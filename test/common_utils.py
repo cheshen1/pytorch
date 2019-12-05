@@ -1279,7 +1279,7 @@ def do_test_empty_full(self, dtypes, layout, device):
             int64_dtype = get_int64_dtype(dtype)
             v = torch.empty(shape, dtype=dtype, device=device, layout=layout, requires_grad=rg)
             check_value(v, dtype, layout, device, None, rg)
-            out = v.new()            
+            out = v.new()
             check_value(torch.empty(shape, out=out, device=device, layout=layout, requires_grad=rg),
                         dtype, layout, device, None, rg)
             check_value(v.new_empty(shape), dtype, layout, device, None, False)

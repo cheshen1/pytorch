@@ -50,12 +50,11 @@ namespace detail {
 
   struct TensorOptionsAccumulator : at::IterArgs<TensorOptionsAccumulator> {
     TensorOptions options;
-    void operator()(c10::optional<ScalarType> dtype) { // [CHECK THIS] pass const &
+    void operator()(c10::optional<ScalarType> dtype) {
       if (dtype.has_value())
         options = options.dtype(*dtype);
       else 
-        // Take default
-        options = options.dtype(ScalarType::Float);
+        options = options.dtype(at::get_default_dtype());
     }
     void operator()(c10::optional<Device> device) {
       if (device.has_value())

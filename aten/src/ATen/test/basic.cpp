@@ -345,3 +345,35 @@ TEST(BasicTest, BasicTestCUDA) {
     test(CUDA(kFloat));
   }
 }
+
+TEST(BasicTest, FactoryMethodsTest) {
+  at::Tensor tensor0 = at::bartlett_window(0);
+  ASSERT_EQ(tensor0.dtype(), kFloat);
+  ASSERT_EQ(tensor0.layout(), at::kStrided);
+
+  tensor0 = at::bartlett_window(0, at::TensorOptions().requires_grad(false));
+  ASSERT_EQ(tensor0.dtype(), kFloat);
+  ASSERT_EQ(tensor0.layout(), at::kStrided);
+  ASSERT_EQ(tensor0.device(), at::kCPU);
+
+  at::Tensor tensor1 = at::bartlett_window(0, at::TensorOptions().dtype(kHalf));
+  ASSERT_EQ(tensor1.dtype(), kHalf);
+  ASSERT_EQ(tensor1.layout(), at::kStrided);
+  ASSERT_FALSE(tensor1.device().is_cuda());
+
+  tensor1 = at::bartlett_window(0, at::TensorOptions().dtype(kFloat).device(at::kCPU).layout(at::kStrided));
+  ASSERT_EQ(tensor1.dtype(), kFloat);
+  ASSERT_EQ(tensor1.layout(), at::kStrided);
+  ASSERT_FALSE(tensor1.device().is_cuda()); // <----- check cuda case
+
+  at::Tensor tensor2 = at::bartlett_window({5}, at::TensorOptions().requires_grad(true));
+  ASSERT_EQ(tensor2.dtype(), kFloat);
+  ASSERT_EQ(tensor2.layout(), at::kStrided);
+  ASSERT_EQ(tensor2.requires_grad(), true);
+
+  tensor2 = at::bartlett_window({5}, at::TensorOptions().dtype(kLong).device(at::kCPU).requires_grad(false));
+  ASSERT_EQ(tensor2.dtype(), kLong);
+  ASSERT_EQ(tensor2.layout(), at::kStrided);
+  ASSERT_EQ(tensor2.requires_grad(), false);
+  ASSERT_FALSE(tensor2.device().is_cuda());
+}
